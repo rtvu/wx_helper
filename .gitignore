@@ -21,3 +21,10 @@ erl_crash.dump
 
 # macOS desktop services store file
 .DS_Store
+
+# The directory for temporary resources.
+/temp
+
+# Dynamically generated files from project.
+/lib/wx_helper.ex
+/src
