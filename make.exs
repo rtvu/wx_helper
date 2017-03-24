@@ -1,31 +1,33 @@
-defmodule Mix.Tasks.Make do
-  use Mix.Task
-
+defmodule Make do
   @wx_header_path "wx/include/wx.hrl"
 
   @src_path "./src"
 
   @erl_name "wx_elixir_helper"
-  @wx_elixir_helper_atom ":#{@erl_name}"
-  @wx_elixir_helper_path "./src/#{@erl_name}.erl"
-  @wx_elixir_helper_heading ["-module(#{@erl_name}).\n",
-                             "-compile(export_all).\n\n",
-                             "-include_lib(\"#{@wx_header_path}\").\n"]
+  @erl_atom ":#{@erl_name}"
+  @erl_path "./src/#{@erl_name}.erl"
+  @erl_heading ["-module(#{@erl_name}).\n",
+                "-compile(export_all).\n\n",
+                "-include_lib(\"#{@wx_header_path}\").\n"]
 
-  @wx_helper_path "./lib/wx_helper.ex"
-  @wx_helper_heading ["defmodule WxHelper do\n",
-                      "  require Record\n\n"]
-  @wx_helper_ending ["end\n"]
+  @ex_path "./lib/wx_helper.ex"
+  @ex_heading ["defmodule WxHelper do\n",
+               "  require Record\n\n"]
+  @ex_ending ["end\n"]
 
   @record_regex ~r/-record\((?<record>[^,]+),.*/
   @define_regex ~r/-define\((?<define>[^,]+),.*/
 
-#  @external_resource wx_header_absolute_path = from_lib_file(@wx_header_path)
+  def run() do
+    unless File.exists?(@erl_path) and File.exists?(@ex_path) do
+      make()
+    end
+  end
 
-  def run(_args) do
-    make_src_folder()
-    clean_file(@wx_elixir_helper_path)
-    clean_file(@wx_helper_path)
+  defp make() do
+    make_folder(@src_path)
+    clean_file(@erl_path)
+    clean_file(@ex_path)
 
     {records, defines} =  @wx_header_path
                           |> from_lib_file()
@@ -33,23 +35,23 @@ defmodule Mix.Tasks.Make do
                           |> String.split("\n")
                           |> parse({[], []})
 
-    wx_helper_records = records |> Enum.map(&make_elixir_record/1)
-    wx_helper_functions = defines |> Enum.map(&make_elixir_function/1)
-    wx_helper_contents = @wx_helper_heading ++ wx_helper_records ++ ["\n"] ++ wx_helper_functions ++ @wx_helper_ending
+    erl_functions = defines |> Enum.map(&make_erlang_function/1)
+    erl_contents = @erl_heading ++ erl_functions
 
-    wx_elixir_helper_functions = defines |> Enum.map(&make_erlang_function/1)
-    wx_elixir_helper_contents = @wx_elixir_helper_heading ++ wx_elixir_helper_functions
+    ex_records = records |> Enum.map(&make_elixir_record/1)
+    ex_functions = defines |> Enum.map(&make_elixir_function/1)
+    ex_contents = @ex_heading ++ ex_records ++ ["\n"] ++ ex_functions ++ @ex_ending
 
-    wx_helper = File.stream!(@wx_helper_path)
-    wx_elixir_helper = File.stream!(@wx_elixir_helper_path)
+    erl_file_handle = File.stream!(@erl_path)
+    ex_file_handle = File.stream!(@ex_path)
 
-    Enum.into(wx_helper_contents, wx_helper)
-    Enum.into(wx_elixir_helper_contents, wx_elixir_helper)
+    Enum.into(erl_contents, erl_file_handle)
+    Enum.into(ex_contents, ex_file_handle)
   end
 
-  defp make_src_folder() do
-    unless File.exists?(@src_path) do
-      File.mkdir!(@src_path)
+  defp make_folder(path) do
+    unless File.exists?(path) do
+      File.mkdir!(path)
     end
   end
 
@@ -93,11 +95,11 @@ defmodule Mix.Tasks.Make do
   end
 
   defp make_elixir_record(record) do
-    "  Record.defrecordp :#{record}, Record.extract(:#{record}, from_lib: \"#{@wx_header_path}\")\n"
+    "  Record.defrecord :#{record}, Record.extract(:#{record}, from_lib: \"#{@wx_header_path}\")\n"
   end
 
   defp make_elixir_function({function, _macro}) do
-    "  def #{function}, do: #{@wx_elixir_helper_atom}.#{function}()\n"
+    "  def #{function}(), do: #{@erl_atom}.#{function}()\n"
   end
 
   defp make_erlang_function({function, macro}) do
@@ -114,3 +116,5 @@ defmodule Mix.Tasks.Make do
     end
   end
 end
+
+Make.run()
