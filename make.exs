@@ -2,6 +2,7 @@ defmodule Make do
   @wx_header_path "wx/include/wx.hrl"
 
   @src_path "./src"
+  @lib_path "./lib"
 
   @erl_name "wx_elixir_helper"
   @erl_atom ":#{@erl_name}"
@@ -27,6 +28,7 @@ defmodule Make do
 
   defp make() do
     make_folder(@src_path)
+    make_folder(@lib_path)
     clean_file(@erl_path)
     clean_file(@ex_path)
 
