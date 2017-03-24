@@ -12,6 +12,7 @@ defmodule Make do
 
   @ex_path "./lib/wx_helper.ex"
   @ex_heading ["defmodule WxHelper do\n",
+               "@moduledoc false\n\n",
                "  require Record\n\n"]
   @ex_ending ["end\n"]
 
