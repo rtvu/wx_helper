@@ -26,5 +26,5 @@ erl_crash.dump
 /temp
 
 # Dynamically generated files from project.
-/lib/wx_helper.ex
+/lib
 /src
